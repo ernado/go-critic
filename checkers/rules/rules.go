@@ -490,3 +490,15 @@ func yodaStyleExpr(m dsl.Matcher) {
 	m.Match(`$constval >= $x`).Where(m["constval"].Const && !m["x"].Const).
 		Report(`consider to change order in expression to $x < $constval`)
 }
+
+//doc:summary Detects unassigned errors
+//doc:tags    style experimental
+//doc:before  if rows.Err() != nil { ... }
+//doc:after   if err := rows.Err(); err != nil { ... }
+func unassignedError(m dsl.Matcher) {
+	m.Match(`$err != nil`, `$err == nil`).
+		Where(!m["err"].Pure && (m["$$"].Node.Parent().Is(`IfStmt`) ||
+			m["$$"].Node.Parent().Is(`ForStmt`) ||
+			m["$$"].Node.Parent().Is(`CaseClause`))).
+		Report("assign $err to a variable and check it afterwards")
+}
